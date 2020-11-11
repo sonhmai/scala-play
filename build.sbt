@@ -4,7 +4,7 @@ import play.sbt.PlaySettings
 lazy val root = (project in file("."))
   .enablePlugins(PlayService, PlayLayoutPlugin, Common)
   .settings(
-    name := "play-scala-rest-api-example",
+    name := "play-scala-order",
     scalaVersion := "2.13.1",
     libraryDependencies ++= Seq(
       guice,
