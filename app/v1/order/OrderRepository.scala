@@ -13,7 +13,8 @@ import scala.concurrent.Future
 
 final case class OrderData(orderId: String = UUID.randomUUID().toString, memberId: String,
                            OTP: Int, totalAmount: Int, platformId: String,
-                           created_at: Long = Instant.now().getEpochSecond)
+                           created_at: Long = Instant.now().getEpochSecond,
+                           verified: Boolean = false)
 
 class OrderId private (val underlying: Int) extends AnyVal {
   override def toString: String = underlying.toString
@@ -56,10 +57,10 @@ class OrderRepositoryImpl @Inject()()(implicit ec: OrderExecutionContext)
 
   private val orderList = ListBuffer(
     OrderData(memberId = "member1", OTP = 123, totalAmount = 10000, platformId = "web"),
-    OrderData(memberId = "member2", OTP = 345, totalAmount = 10000, platformId = "ios"),
-    OrderData(memberId = "member1", OTP = 456, totalAmount = 10000, platformId = "android"),
-    OrderData(memberId = "member3", OTP = 789, totalAmount = 10000, platformId = "pos"),
-    OrderData(memberId = "member2", OTP = 234, totalAmount = 10000, platformId = "web")
+    OrderData(memberId = "member2", OTP = 123, totalAmount = 10000, platformId = "ios"),
+    OrderData(memberId = "member1", OTP = 123, totalAmount = 10000, platformId = "android"),
+    OrderData(memberId = "member3", OTP = 123, totalAmount = 10000, platformId = "pos"),
+    OrderData(memberId = "member2", OTP = 123, totalAmount = 10000, platformId = "web")
   )
 
   override def list(platformId: Option[String], start: Option[Long], end: Option[Long])(
@@ -83,6 +84,7 @@ class OrderRepositoryImpl @Inject()()(implicit ec: OrderExecutionContext)
   def create(data: OrderData)(implicit mc: MarkerContext): Future[String] = {
     Future {
       logger.trace(s"create: data = $data")
+      orderList.addOne(data)
       data.orderId
     }
   }

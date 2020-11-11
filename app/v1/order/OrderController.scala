@@ -10,6 +10,8 @@ import scala.concurrent.{ExecutionContext, Future}
 
 case class OrderFormInput(memberId: String, totalAmount: Int, platformId: String)
 
+case class OrderVerificationInput(orderId: String, OTP: Int)
+
 /**
   * Takes HTTP requests and produces JSON.
   */
@@ -28,6 +30,17 @@ class OrderController @Inject()(cc: OrderControllerComponents)(
         "totalAmount" -> number,
         "platformId" -> nonEmptyText
       )(OrderFormInput.apply)(OrderFormInput.unapply)
+    )
+  }
+
+  private val verificationForm: Form[OrderVerificationInput] = {
+    import play.api.data.Forms._
+
+    Form(
+      mapping(
+        "orderId" -> nonEmptyText,
+        "OTP" -> number
+      )(OrderVerificationInput.apply)(OrderVerificationInput.unapply)
     )
   }
 
@@ -54,6 +67,11 @@ class OrderController @Inject()(cc: OrderControllerComponents)(
       }
   }
 
+  def verify: Action[AnyContent] = OrderAction.async { implicit request =>
+    logger.trace("verify: ")
+    verifyOrder()
+  }
+
   private def processJsonOrder[A]()(
       implicit request: OrderRequest[A]): Future[Result] = {
     def failure(badForm: Form[OrderFormInput]) = {
@@ -61,11 +79,26 @@ class OrderController @Inject()(cc: OrderControllerComponents)(
     }
 
     def success(input: OrderFormInput) = {
-      orderResourceHandler.create(input).map { order =>
-        Created(Json.toJson(order)).withHeaders(LOCATION -> order.link)
+      orderResourceHandler.create(input).map { orderPlacedInfo =>
+        Created(Json.toJson(orderPlacedInfo)).withHeaders(LOCATION -> orderPlacedInfo.link)
       }
     }
 
     form.bindFromRequest().fold(failure, success)
+  }
+
+  private def verifyOrder[A]()(
+    implicit request: OrderRequest[A]): Future[Result] = {
+    def failure(badForm: Form[OrderVerificationInput]) = {
+      Future.successful(BadRequest(badForm.errorsAsJson))
+    }
+
+    def success(input: OrderVerificationInput) = {
+      orderResourceHandler.verify(input).map { orderResource =>
+        Created(Json.toJson(orderResource))
+      }
+    }
+
+    verificationForm.bindFromRequest().fold(failure, success)
   }
 }

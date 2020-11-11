@@ -24,6 +24,9 @@ class OrderRouter @Inject()(controller: OrderController) extends SimpleRouter {
     case POST(p"/") =>
       controller.process
 
+    case POST(p"/verify") =>
+      controller.verify
+
     case GET(p"/$id") =>
       controller.show(id)
   }
